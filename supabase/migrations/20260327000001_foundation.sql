@@ -4,30 +4,8 @@
 -- Warstwa 2: Identity & Access
 -- =============================================
 
--- Helper function: get current user's workspace IDs
-CREATE OR REPLACE FUNCTION get_my_workspace_ids()
-RETURNS SETOF uuid
-LANGUAGE sql
-SECURITY DEFINER
-STABLE
-AS $$
-  SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-$$;
-
--- Helper function: check if user is workspace admin
-CREATE OR REPLACE FUNCTION is_workspace_admin(ws_id uuid)
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-STABLE
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM workspace_members
-    WHERE workspace_id = ws_id
-      AND user_id = auth.uid()
-      AND system_role IN ('super_admin', 'workspace_admin')
-  )
-$$;
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- =============================================
 -- WARSTWA 1: TENANT / WORKSPACE / BRAND
@@ -164,7 +142,7 @@ CREATE TABLE invitations (
   email text NOT NULL,
   role_id uuid REFERENCES roles(id),
   business_role business_role DEFAULT 'participant',
-  token text NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+  token text NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', ''),
   invited_by uuid REFERENCES auth.users(id),
   expires_at timestamptz DEFAULT now() + interval '7 days',
   accepted_at timestamptz,
@@ -181,6 +159,33 @@ CREATE TABLE tags (
   created_at timestamptz DEFAULT now(),
   UNIQUE(workspace_id, name)
 );
+
+-- =============================================
+-- HELPER FUNCTIONS (after tables exist)
+-- =============================================
+
+CREATE OR REPLACE FUNCTION get_my_workspace_ids()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
+$$;
+
+CREATE OR REPLACE FUNCTION is_workspace_admin(ws_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM workspace_members
+    WHERE workspace_id = ws_id
+      AND user_id = auth.uid()
+      AND system_role IN ('super_admin', 'workspace_admin')
+  )
+$$;
 
 -- =============================================
 -- RLS POLICIES
