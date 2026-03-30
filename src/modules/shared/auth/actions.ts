@@ -21,7 +21,7 @@ export async function signUp(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect('/app')
+  redirect('/app/select')
 }
 
 export async function signIn(formData: FormData) {
@@ -38,7 +38,7 @@ export async function signIn(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect('/app')
+  redirect('/app/select')
 }
 
 export async function signOut() {
