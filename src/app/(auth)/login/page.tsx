@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { signIn } from '@/lib/actions/auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { signIn } from '@/modules/shared/auth/actions'
+import { Button } from '@/components/shared/ui/button'
+import { Input } from '@/components/shared/ui/input'
+import { Label } from '@/components/shared/ui/label'
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)

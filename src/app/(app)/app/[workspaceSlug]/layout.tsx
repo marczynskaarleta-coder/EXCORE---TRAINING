@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
-import { getWorkspaceBySlug, getWorkspaceMember } from '@/lib/actions/workspace'
-import { Sidebar } from '@/components/layout/sidebar'
-import { Header } from '@/components/layout/header'
+import { getWorkspaceBySlug, getWorkspaceMember } from '@/modules/shared/workspace/actions'
+import { Sidebar } from '@/components/shared/layout/sidebar'
+import { Header } from '@/components/shared/layout/header'
 
 export default async function WorkspaceLayout({
   children,

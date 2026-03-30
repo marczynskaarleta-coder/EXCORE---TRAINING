@@ -1,19 +1,12 @@
 import Link from 'next/link'
-import { getWorkspaceBySlug, getWorkspaceMember } from '@/lib/actions/workspace'
-import { getProducts, getMyEnrollments } from '@/lib/actions/products'
+import { getWorkspaceBySlug, getWorkspaceMember } from '@/modules/shared/workspace/actions'
+import { getProducts } from '@/modules/training/products/actions'
+import { getMyEnrollments } from '@/modules/training/enrollments/actions'
 import { BookOpen, Clock, Users, ArrowRight } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-
-const TYPE_LABELS: Record<string, string> = {
-  course: 'Kurs',
-  membership: 'Membership',
-  cohort_program: 'Program kohortowy',
-  event_series: 'Seria wydarzen',
-  resource_hub: 'Baza zasobow',
-  mentoring_program: 'Mentoring',
-  community_access: 'Dostep do spolecznosci',
-  bundle: 'Pakiet',
-}
+import { Badge } from '@/components/shared/ui/badge'
+import type { ProductWithRelations } from '@/modules/training/products/types'
+import { PRODUCT_TYPE_LABELS } from '@/modules/training/products/types'
+import type { EnrollmentWithProduct } from '@/modules/training/enrollments/types'
 
 export default async function LearningPage({
   params,
@@ -29,13 +22,13 @@ export default async function LearningPage({
 
   const [products, enrollments] = await Promise.all([
     getProducts(workspace.id),
-    getMyEnrollments(workspace.id, member.id),
+    getMyEnrollments(workspace.id, member.user_id),
   ])
 
-  const enrolledIds = new Set(enrollments.map((e: { product_id: string }) => e.product_id))
+  const enrolledIds = new Set(enrollments.map((e) => e.product_id))
 
   const publishedProducts = products.filter(
-    (p: { status: string }) => p.status === 'published'
+    (p) => p.status === 'published'
   )
 
   return (
@@ -56,19 +49,7 @@ export default async function LearningPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {publishedProducts.map((product: {
-            id: string
-            title: string
-            slug: string
-            short_description: string | null
-            description: string | null
-            type: string
-            cover_image_url: string | null
-            pricing_type: string
-            price_amount: number
-            currency: string
-            enrollments: { count: number }[] | null
-          }) => {
+          {publishedProducts.map((product) => {
             const isEnrolled = enrolledIds.has(product.id)
             const enrollmentCount = product.enrollments?.[0]?.count || 0
 
@@ -93,7 +74,7 @@ export default async function LearningPage({
                 <div className="p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
-                      {TYPE_LABELS[product.type] || product.type}
+                      {PRODUCT_TYPE_LABELS[product.type] || product.type}
                     </Badge>
                     {isEnrolled && (
                       <Badge className="text-xs bg-green-100 text-green-700">
@@ -103,11 +84,11 @@ export default async function LearningPage({
                   </div>
 
                   <h3 className="font-semibold group-hover:text-primary transition-colors">
-                    {product.title}
+                    {product.name}
                   </h3>
 
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {product.short_description || product.description}
+                    {product.description}
                   </p>
 
                   <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
@@ -115,13 +96,17 @@ export default async function LearningPage({
                       <Users className="h-3 w-3" />
                       {enrollmentCount} uczestnikow
                     </span>
-                    {product.pricing_type === 'free' ? (
-                      <span className="font-medium text-green-600">Darmowe</span>
-                    ) : (
-                      <span className="font-medium">
-                        {(product.price_amount / 100).toFixed(0)} {product.currency}
-                      </span>
-                    )}
+                    {(() => {
+                      const plan = product.product_plans?.[0]
+                      if (!plan || plan.billing_type === 'free') {
+                        return <span className="font-medium text-green-600">Darmowe</span>
+                      }
+                      return (
+                        <span className="font-medium">
+                          {(plan.price_amount / 100).toFixed(0)} {plan.currency}
+                        </span>
+                      )
+                    })()}
                   </div>
                 </div>
               </Link>

@@ -1,20 +1,8 @@
-import { getWorkspaceBySlug } from '@/lib/actions/workspace'
-import { createClient } from '@/lib/supabase/server'
+import { getWorkspaceBySlug } from '@/modules/shared/workspace/actions'
+import { getResources } from '@/modules/training/resources/actions'
+import { RESOURCE_TYPE_ICONS } from '@/modules/training/resources/types'
 import { FolderOpen, FileText, Download, ExternalLink } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-
-const TYPE_ICONS: Record<string, string> = {
-  pdf: 'PDF',
-  template: 'TPL',
-  workbook: 'WB',
-  checklist: 'CHL',
-  sop: 'SOP',
-  recording: 'REC',
-  video: 'VID',
-  audio: 'AUD',
-  link: 'LNK',
-  other: 'DOC',
-}
+import { Badge } from '@/components/shared/ui/badge'
 
 export default async function ResourcesPage({
   params,
@@ -25,15 +13,7 @@ export default async function ResourcesPage({
   const workspace = await getWorkspaceBySlug(workspaceSlug)
   if (!workspace) return null
 
-  const supabase = await createClient()
-  const { data: resources } = await supabase
-    .from('resources')
-    .select(`
-      *,
-      resource_tags (tag_id, tags (name, color))
-    `)
-    .eq('workspace_id', workspace.id)
-    .order('created_at', { ascending: false })
+  const resources = await getResources(workspace.id)
 
   return (
     <div className="space-y-6">
@@ -53,22 +33,11 @@ export default async function ResourcesPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {resources.map((resource: {
-            id: string
-            title: string
-            description: string | null
-            type: string
-            file_url: string | null
-            external_url: string | null
-            file_size: number | null
-            download_count: number
-            is_premium: boolean
-            resource_tags: Array<{ tags: { name: string; color: string } }>
-          }) => (
+          {resources.map((resource) => (
             <div key={resource.id} className="bg-card border rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                  {TYPE_ICONS[resource.type] || 'DOC'}
+                  {RESOURCE_TYPE_ICONS[resource.type as keyof typeof RESOURCE_TYPE_ICONS] || 'DOC'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium truncate">{resource.title}</h3>
@@ -78,9 +47,9 @@ export default async function ResourcesPage({
                 </div>
               </div>
 
-              {resource.resource_tags?.length > 0 && (
+              {(resource.resource_tags?.length ?? 0) > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {resource.resource_tags.map((rt, i) => (
+                  {resource.resource_tags?.map((rt, i) => (
                     <Badge key={i} variant="outline" className="text-xs" style={{ borderColor: rt.tags.color }}>
                       {rt.tags.name}
                     </Badge>

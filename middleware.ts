@@ -48,8 +48,8 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Require auth for /api/*
-  if (!user && pathname.startsWith('/api')) {
+  // Require auth for /api/* (except webhooks)
+  if (!user && pathname.startsWith('/api') && !pathname.startsWith('/api/webhooks')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

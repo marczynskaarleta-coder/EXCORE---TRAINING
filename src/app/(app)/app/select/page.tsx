@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getMyWorkspaces } from '@/lib/actions/workspace'
-import { Button } from '@/components/ui/button'
+import { getMyWorkspaces } from '@/modules/shared/workspace/actions'
+import { Button } from '@/components/shared/ui/button'
 import { Plus } from 'lucide-react'
 
 export default async function WorkspaceSelectPage() {

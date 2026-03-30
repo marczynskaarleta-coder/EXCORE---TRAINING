@@ -1,8 +1,10 @@
-import { getWorkspaceBySlug, getWorkspaceMember } from '@/lib/actions/workspace'
-import { getMyEnrollments } from '@/lib/actions/products'
-import { getUpcomingEvents } from '@/lib/actions/events'
-import { getUnreadCount } from '@/lib/actions/notifications'
+import { getWorkspaceBySlug, getWorkspaceMember } from '@/modules/shared/workspace/actions'
+import { getMyEnrollments } from '@/modules/training/enrollments/actions'
+import { getUpcomingEvents } from '@/modules/training/events/actions'
+import { getUnreadCount } from '@/modules/shared/notifications/actions'
 import { BookOpen, Calendar, Bell, TrendingUp } from 'lucide-react'
+import type { EnrollmentWithProduct } from '@/modules/training/enrollments/types'
+import type { EventWithHost } from '@/modules/training/events/types'
 
 export default async function DashboardPage({
   params,
@@ -17,13 +19,13 @@ export default async function DashboardPage({
   if (!member) return null
 
   const [enrollments, events, unreadCount] = await Promise.all([
-    getMyEnrollments(workspace.id, member.id),
+    getMyEnrollments(workspace.id, member.user_id),
     getUpcomingEvents(workspace.id, 3),
     getUnreadCount(member.id),
   ])
 
-  const activeEnrollments = enrollments.filter((e: { status: string }) => e.status === 'active')
-  const completedEnrollments = enrollments.filter((e: { status: string }) => e.status === 'completed')
+  const activeEnrollments = enrollments.filter((e) => e.status === 'active')
+  const completedEnrollments = enrollments.filter((e) => e.status === 'completed')
 
   return (
     <div className="space-y-6">
@@ -84,14 +86,10 @@ export default async function DashboardPage({
         <div className="bg-card border rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Kontynuuj nauke</h2>
           <div className="space-y-3">
-            {activeEnrollments.map((enrollment: {
-              id: string
-              progress_percent: number
-              products: { title: string; slug: string; type: string } | null
-            }) => (
+            {activeEnrollments.map((enrollment: EnrollmentWithProduct) => (
               <div key={enrollment.id} className="flex items-center justify-between p-3 bg-background rounded-md">
                 <div>
-                  <p className="font-medium">{enrollment.products?.title}</p>
+                  <p className="font-medium">{enrollment.products?.name}</p>
                   <p className="text-sm text-muted-foreground capitalize">{enrollment.products?.type?.replace('_', ' ')}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -114,13 +112,7 @@ export default async function DashboardPage({
         <div className="bg-card border rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Nadchodzace wydarzenia</h2>
           <div className="space-y-3">
-            {events.map((event: {
-              id: string
-              title: string
-              type: string
-              starts_at: string
-              host: { display_name: string } | null
-            }) => (
+            {events.map((event: EventWithHost) => (
               <div key={event.id} className="flex items-center justify-between p-3 bg-background rounded-md">
                 <div>
                   <p className="font-medium">{event.title}</p>
